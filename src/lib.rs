@@ -1,6 +1,10 @@
-//! A library with primatives representing money/commodities
-//! ([Commodity](Commodity)), and their associated types
-//! ([Currency](Currency)).
+//! A library with primatives representing commodities/money.
+//! 
+//! The commodity package has the following optional cargo features:
+//! 
+//! + `serde-support`
+//!   + Optional
+//!   + Enable support for serialization/de-serialization via `serde`
 
 extern crate arrayvec;
 extern crate chrono;
@@ -29,8 +33,9 @@ pub const CURRENCY_CODE_LENGTH: usize = 8;
 /// The type used to store the value of a [CurrencyCode](CurrencyCode).
 type CurrencyCodeArray = ArrayString<[u8; CURRENCY_CODE_LENGTH]>;
 
+/// An error associated with functionality in the [commodity](./index.html) module.
 #[derive(Error, Debug, PartialEq)]
-pub enum CurrencyError {
+pub enum CommodityError {
     #[error("This commodity {this_commodity:?} is incompatible with {other_commodity:?} because {reason:?}")]
     IncompatableCommodity {
         this_commodity: Commodity,
@@ -93,7 +98,7 @@ impl Currency {
     /// assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency.code);
     /// assert_eq!("Australian dollar", currency.name.unwrap());
     /// ```
-    pub fn from_str(code: &str, name: &str) -> Result<Currency, CurrencyError> {
+    pub fn from_str(code: &str, name: &str) -> Result<Currency, CommodityError> {
         let code = CurrencyCode::from_str(code)?;
 
         let name = if name.len() == 0 {
@@ -116,10 +121,10 @@ impl Currency {
     /// assert_eq!("AUD", currency.code);
     /// assert_eq!(Some(String::from("Australian dollar")), currency.name);
     /// ```
-    pub fn from_alpha3(alpha3: &str) -> Result<Currency, CurrencyError> {
+    pub fn from_alpha3(alpha3: &str) -> Result<Currency, CommodityError> {
         match iso4217::alpha3(alpha3) {
             Some(code) => Currency::from_str(alpha3, code.name),
-            None => Err(CurrencyError::InvalidISO4217Alpha3(String::from(alpha3))),
+            None => Err(CommodityError::InvalidISO4217Alpha3(String::from(alpha3))),
         }
     }
 }
@@ -155,9 +160,9 @@ impl CurrencyCode {
     /// let currency_code = CurrencyCode::from_str("AUD").unwrap();
     /// assert_eq!("AUD", currency_code);
     /// ```
-    pub fn from_str(code: &str) -> Result<CurrencyCode, CurrencyError> {
+    pub fn from_str(code: &str) -> Result<CurrencyCode, CommodityError> {
         if code.len() > CURRENCY_CODE_LENGTH {
-            return Err(CurrencyError::TooLongCurrencyCode(String::from(code)));
+            return Err(CommodityError::TooLongCurrencyCode(String::from(code)));
         }
 
         return Ok(CurrencyCode::new(CurrencyCodeArray::from(code).unwrap()));
@@ -233,9 +238,9 @@ fn check_currency_compatible(
     this_commodity: &Commodity,
     other_commodity: &Commodity,
     reason: String,
-) -> Result<(), CurrencyError> {
+) -> Result<(), CommodityError> {
     if !this_commodity.compatible_with(other_commodity) {
-        return Err(CurrencyError::IncompatableCommodity {
+        return Err(CommodityError::IncompatableCommodity {
             this_commodity: this_commodity.clone(),
             other_commodity: other_commodity.clone(),
             reason,
@@ -286,11 +291,11 @@ impl Commodity {
     /// assert_eq!(Decimal::from_str("1.234").unwrap(), commodity.value);
     /// assert_eq!(CurrencyCode::from_str("USD").unwrap(), commodity.currency_code);
     /// ```
-    pub fn from_str(commodity_string: &str) -> Result<Commodity, CurrencyError> {
+    pub fn from_str(commodity_string: &str) -> Result<Commodity, CommodityError> {
         let elements: Vec<&str> = commodity_string.split_whitespace().collect();
 
         if elements.len() != 2 {
-            return Err(CurrencyError::InvalidCommodityString(String::from(
+            return Err(CommodityError::InvalidCommodityString(String::from(
                 commodity_string,
             )));
         }
@@ -321,7 +326,7 @@ impl Commodity {
     /// assert_eq!(currency_code, result.currency_code);
     /// ```
     #[inline]
-    pub fn add(&self, other: &Commodity) -> Result<Commodity, CurrencyError> {
+    pub fn add(&self, other: &Commodity) -> Result<Commodity, CommodityError> {
         check_currency_compatible(
             self,
             other,
@@ -351,7 +356,7 @@ impl Commodity {
     /// assert_eq!(currency_code, result.currency_code);
     /// ```
     #[inline]
-    pub fn sub(&self, other: &Commodity) -> Result<Commodity, CurrencyError> {
+    pub fn sub(&self, other: &Commodity) -> Result<Commodity, CommodityError> {
         check_currency_compatible(
             self,
             other,
@@ -518,7 +523,7 @@ impl Commodity {
     /// assert_eq!(false, aud2.lt(&aud1).unwrap());
     /// ```
     #[inline]
-    pub fn lt(&self, other: &Commodity) -> Result<bool, CurrencyError> {
+    pub fn lt(&self, other: &Commodity) -> Result<bool, CommodityError> {
         check_currency_compatible(
             self,
             other,
@@ -542,7 +547,7 @@ impl Commodity {
     /// assert_eq!(true, aud2.gt(&aud1).unwrap());
     /// ```
     #[inline]
-    pub fn gt(&self, other: &Commodity) -> Result<bool, CurrencyError> {
+    pub fn gt(&self, other: &Commodity) -> Result<bool, CommodityError> {
         check_currency_compatible(
             self,
             other,
@@ -627,7 +632,7 @@ impl fmt::Display for Commodity {
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, CurrencyCode, CurrencyError};
+    use super::{Commodity, CurrencyCode, CommodityError};
     use rust_decimal::Decimal;
 
     // #[test]
@@ -677,7 +682,7 @@ mod tests {
         let error1 = commodity1.add(&commodity2).expect_err("expected an error");
 
         assert_eq!(
-            CurrencyError::IncompatableCommodity {
+            CommodityError::IncompatableCommodity {
                 this_commodity: commodity1.clone(),
                 other_commodity: commodity2.clone(),
                 reason: String::from("cannot add commodities with different currencies"),
@@ -688,7 +693,7 @@ mod tests {
         let error2 = commodity1.sub(&commodity2).expect_err("expected an error");
 
         assert_eq!(
-            CurrencyError::IncompatableCommodity {
+            CommodityError::IncompatableCommodity {
                 this_commodity: commodity1,
                 other_commodity: commodity2,
                 reason: String::from("cannot subtract commodities with different currencies"),
