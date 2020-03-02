@@ -4,7 +4,23 @@
 //! 
 //! + `serde-support`
 //!   + Optional
-//!   + Enable support for serialization/de-serialization via `serde`
+//!   + Enables support for serialization/de-serialization via `serde`
+//! 
+//! # Useage
+//! 
+//! ```
+//! use commodity::{Commodity, Currency};
+//! use rust_decimal::Decimal;
+//! use std::str::FromStr;
+//!
+//! // Create a currency from its `iso4317` three character code, 
+//! // which in this case is `United States dollar`.
+//! let currency = Currency::from_alpha3("USD").unwrap();
+//! 
+//! // Create a commodity with a value of `2.02 USD`
+//! let commodity = Commodity::new(Decimal::from_str("2.02").unwrap(), &currency);
+//! 
+//! ```
 
 extern crate arrayvec;
 extern crate chrono;
@@ -73,6 +89,7 @@ impl Currency {
     /// # Example
     /// ```
     /// # use commodity::{Currency, CurrencyCode};
+    /// use std::str::FromStr;
     ///
     /// let code = CurrencyCode::from_str("AUD").unwrap();
     /// let currency = Currency::new(
@@ -93,6 +110,8 @@ impl Currency {
     /// # Example
     /// ```
     /// # use commodity::{Currency, CurrencyCode};
+    /// use std::str::FromStr;
+    /// 
     /// let currency = Currency::from_str("AUD", "Australian dollar").unwrap();
     ///
     /// assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency.code);
@@ -151,21 +170,32 @@ impl CurrencyCode {
     pub fn new(code_array: CurrencyCodeArray) -> CurrencyCode {
         CurrencyCode { code_array }
     }
+}
+
+impl FromStr for CurrencyCode {
+    type Err = CommodityError;
 
     /// Create a new [Currency](Currency).
     ///
     /// # Example
     /// ```
     /// # use commodity::CurrencyCode;
+    /// use std::str::FromStr;
     /// let currency_code = CurrencyCode::from_str("AUD").unwrap();
     /// assert_eq!("AUD", currency_code);
     /// ```
-    pub fn from_str(code: &str) -> Result<CurrencyCode, CommodityError> {
+    fn from_str(code: &str) -> Result<CurrencyCode, CommodityError> {
         if code.len() > CURRENCY_CODE_LENGTH {
             return Err(CommodityError::TooLongCurrencyCode(String::from(code)));
         }
 
         return Ok(CurrencyCode::new(CurrencyCodeArray::from(code).unwrap()));
+    }
+}
+
+impl From<&Currency> for CurrencyCode {
+    fn from(currency: &Currency) -> CurrencyCode {
+        currency.code
     }
 }
 
@@ -233,7 +263,6 @@ pub struct Commodity {
 
 /// Check whether the currencies of two commodities are compatible (the same),
 /// if they aren't then return a [IncompatableCommodity](CurrencyError::IncompatableCommodity) error in the `Result`.
-#[inline]
 fn check_currency_compatible(
     this_commodity: &Commodity,
     other_commodity: &Commodity,
@@ -254,21 +283,33 @@ impl Commodity {
     /// Create a new [Commodity](Commodity).
     ///
     /// # Example
+    /// 
     /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
-    /// # use std::str::FromStr;
+    /// # use commodity::{Commodity};
+    /// use commodity::CurrencyCode;
+    /// use std::str::FromStr;
     /// use rust_decimal::Decimal;
-    /// use std::rc::Rc;
     ///
     /// let currency_code = CurrencyCode::from_str("USD").unwrap();
     /// let commodity = Commodity::new(Decimal::new(202, 2), currency_code);
-    ///
+    /// 
     /// assert_eq!(Decimal::from_str("2.02").unwrap(), commodity.value);
     /// assert_eq!(currency_code, commodity.currency_code)
     /// ```
-    pub fn new(value: Decimal, currency_code: CurrencyCode) -> Commodity {
+    /// 
+    /// Using using the `Into` trait to accept `Currency` as the `currency_code`:
+    /// ```
+    /// # use commodity::{Commodity};
+    /// use std::str::FromStr;
+    /// use commodity::Currency;
+    /// use rust_decimal::Decimal;
+    ///
+    /// let currency = Currency::from_alpha3("USD").unwrap();
+    /// let commodity = Commodity::new(Decimal::new(202, 2), &currency);
+    /// ```
+    pub fn new<T: Into<CurrencyCode>>(value: Decimal, currency_code: T) -> Commodity {
         Commodity {
-            currency_code,
+            currency_code: currency_code.into(),
             value,
         }
     }
@@ -278,34 +319,6 @@ impl Commodity {
         Commodity::new(Decimal::zero(), currency_code)
     }
 
-    /// Construct a [Commodity](Commodity) from a string
-    ///
-    /// # Example
-    /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
-    /// use std::str::FromStr;
-    /// use rust_decimal::Decimal;
-    ///
-    /// let commodity = Commodity::from_str("1.234 USD").unwrap();
-    ///
-    /// assert_eq!(Decimal::from_str("1.234").unwrap(), commodity.value);
-    /// assert_eq!(CurrencyCode::from_str("USD").unwrap(), commodity.currency_code);
-    /// ```
-    pub fn from_str(commodity_string: &str) -> Result<Commodity, CommodityError> {
-        let elements: Vec<&str> = commodity_string.split_whitespace().collect();
-
-        if elements.len() != 2 {
-            return Err(CommodityError::InvalidCommodityString(String::from(
-                commodity_string,
-            )));
-        }
-
-        Ok(Commodity::new(
-            Decimal::from_str(elements.get(0).unwrap()).unwrap(),
-            CurrencyCode::from_str(elements.get(1).unwrap())?,
-        ))
-    }
-
     /// Add the value of commodity `other` to `self`
     /// such that `result = self + other`.
     ///
@@ -313,7 +326,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity, CurrencyCode};
     /// use rust_decimal::Decimal;
-    /// use std::rc::Rc;
+    /// use std::str::FromStr;
     ///
     /// let currency_code = CurrencyCode::from_str("USD").unwrap();
     /// let commodity1 = Commodity::new(Decimal::new(400, 2), currency_code);
@@ -325,7 +338,6 @@ impl Commodity {
     /// assert_eq!(Decimal::new(650, 2), result.value);
     /// assert_eq!(currency_code, result.currency_code);
     /// ```
-    #[inline]
     pub fn add(&self, other: &Commodity) -> Result<Commodity, CommodityError> {
         check_currency_compatible(
             self,
@@ -343,7 +355,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity, CurrencyCode};
     /// use rust_decimal::Decimal;
-    /// use std::rc::Rc;
+    /// use std::str::FromStr;
     ///
     /// let currency_code = CurrencyCode::from_str("USD").unwrap();
     /// let commodity1 = Commodity::new(Decimal::new(400, 2), currency_code);
@@ -355,7 +367,6 @@ impl Commodity {
     /// assert_eq!(Decimal::new(150, 2), result.value);
     /// assert_eq!(currency_code, result.currency_code);
     /// ```
-    #[inline]
     pub fn sub(&self, other: &Commodity) -> Result<Commodity, CommodityError> {
         check_currency_compatible(
             self,
@@ -373,7 +384,6 @@ impl Commodity {
     /// # use commodity::{Commodity, CurrencyCode};
     /// # use std::str::FromStr;
     /// use rust_decimal::Decimal;
-    /// use std::rc::Rc;
     ///
     /// let currency_code = CurrencyCode::from_str("USD").unwrap();
     /// let commodity = Commodity::new(Decimal::new(202, 2), currency_code);
@@ -384,7 +394,6 @@ impl Commodity {
     /// assert_eq!(Decimal::from_str("-2.02").unwrap(), result.value);
     /// assert_eq!(currency_code, result.currency_code)
     /// ```
-    #[inline]
     pub fn neg(&self) -> Commodity {
         Commodity::new(-self.value, self.currency_code)
     }
@@ -395,12 +404,12 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity};
     /// use rust_decimal::{Decimal};
+    /// use std::str::FromStr;
     ///
     /// let commodity = Commodity::from_str("4.03 AUD").unwrap();
     /// let result = commodity.div_i64(4);
     /// assert_eq!(Decimal::new(10075, 4), result.value);
     /// ```
-    #[inline]
     pub fn div_i64(&self, i: i64) -> Commodity {
         let decimal = Decimal::new(i * 100, 2);
         Commodity::new(self.value / decimal, self.currency_code)
@@ -412,6 +421,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity};
     /// use rust_decimal::{Decimal};
+    /// use std::str::FromStr;
     ///
     /// let commodity = Commodity::from_str("4.03 AUD").unwrap();
     /// let results = commodity.divide_share(4, 2);
@@ -486,7 +496,6 @@ impl Commodity {
     /// assert_eq!(Decimal::from_str("1.00").unwrap(), usd.value);
     /// assert_eq!("USD", usd.currency_code);
     /// ```
-    #[inline]
     pub fn convert(&self, currency_code: CurrencyCode, rate: Decimal) -> Commodity {
         Commodity::new(self.value * rate, currency_code)
     }
@@ -497,6 +506,8 @@ impl Commodity {
     /// # Example
     /// ```
     /// # use commodity::{Commodity};
+    /// use std::str::FromStr;
+    /// 
     /// let aud1 = Commodity::from_str("1.0 AUD").unwrap();
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     /// let nzd = Commodity::from_str("1.0 NZD").unwrap();
@@ -504,7 +515,6 @@ impl Commodity {
     /// assert!(aud1.compatible_with(&aud2));
     /// assert!(!aud1.compatible_with(&nzd));
     /// ```
-    #[inline]
     pub fn compatible_with(&self, other: &Commodity) -> bool {
         return self.currency_code == other.currency_code;
     }
@@ -516,13 +526,14 @@ impl Commodity {
     /// # Example
     /// ```
     /// # use commodity::{Commodity};
+    /// use std::str::FromStr;
+    /// 
     /// let aud1 = Commodity::from_str("1.0 AUD").unwrap();
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     ///
     /// assert_eq!(true, aud1.lt(&aud2).unwrap());
     /// assert_eq!(false, aud2.lt(&aud1).unwrap());
     /// ```
-    #[inline]
     pub fn lt(&self, other: &Commodity) -> Result<bool, CommodityError> {
         check_currency_compatible(
             self,
@@ -540,13 +551,14 @@ impl Commodity {
     /// # Example
     /// ```
     /// # use commodity::{Commodity};
+    /// use std::str::FromStr;
+    /// 
     /// let aud1 = Commodity::from_str("1.0 AUD").unwrap();
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     ///
     /// assert_eq!(false, aud1.gt(&aud2).unwrap());
     /// assert_eq!(true, aud2.gt(&aud1).unwrap());
     /// ```
-    #[inline]
     pub fn gt(&self, other: &Commodity) -> Result<bool, CommodityError> {
         check_currency_compatible(
             self,
@@ -563,24 +575,22 @@ impl Commodity {
     /// # Example
     /// ```
     /// # use commodity::{Commodity};
+    /// use std::str::FromStr;
+    /// 
     /// let aud1 = Commodity::from_str("-1.0 AUD").unwrap();
     /// assert_eq!(Commodity::from_str("1.0 AUD").unwrap(), aud1.abs());
     ///
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     /// assert_eq!(Commodity::from_str("2.0 AUD").unwrap(), aud2.abs());
     /// ```
-    #[inline]
     pub fn abs(&self) -> Commodity {
         return Commodity::new(self.value.abs(), self.currency_code);
     }
 
     /// The default epsilon to use for comparisons between different [Commodity](Commodity)s.
-    #[inline]
     pub fn default_epsilon() -> Decimal {
         Decimal::new(1, 6)
     }
-
-    #[inline]
     pub fn eq_approx(&self, other: Commodity, epsilon: Decimal) -> bool {
         if other.currency_code != self.currency_code {
             return false;
@@ -596,8 +606,38 @@ impl Commodity {
     }
 }
 
+impl FromStr for Commodity {
+    type Err = CommodityError;
+    /// Construct a [Commodity](Commodity) from a string
+    ///
+    /// # Example
+    /// ```
+    /// # use commodity::{Commodity, CurrencyCode};
+    /// use std::str::FromStr;
+    /// use rust_decimal::Decimal;
+    ///
+    /// let commodity = Commodity::from_str("1.234 USD").unwrap();
+    ///
+    /// assert_eq!(Decimal::from_str("1.234").unwrap(), commodity.value);
+    /// assert_eq!(CurrencyCode::from_str("USD").unwrap(), commodity.currency_code);
+    /// ```
+    fn from_str(commodity_string: &str) -> Result<Commodity, CommodityError> {
+        let elements: Vec<&str> = commodity_string.split_whitespace().collect();
+
+        if elements.len() != 2 {
+            return Err(CommodityError::InvalidCommodityString(String::from(
+                commodity_string,
+            )));
+        }
+
+        Ok(Commodity::new(
+            Decimal::from_str(elements.get(0).unwrap()).unwrap(),
+            CurrencyCode::from_str(elements.get(1).unwrap())?,
+        ))
+    }
+}
+
 impl PartialOrd for Commodity {
-    #[inline]
     fn partial_cmp(&self, other: &Commodity) -> Option<std::cmp::Ordering> {
         check_currency_compatible(
             self,
@@ -611,7 +651,6 @@ impl PartialOrd for Commodity {
 }
 
 impl Ord for Commodity {
-    #[inline]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         check_currency_compatible(
             self,
@@ -634,6 +673,7 @@ impl fmt::Display for Commodity {
 mod tests {
     use super::{Commodity, CurrencyCode, CommodityError};
     use rust_decimal::Decimal;
+    use std::str::FromStr;
 
     // #[test]
     // fn divide_larger() {
