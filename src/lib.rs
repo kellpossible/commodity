@@ -7,10 +7,10 @@ extern crate chrono;
 extern crate iso4217;
 extern crate rust_decimal;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde-support")]
 extern crate serde;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde-support")]
 use serde::{Deserialize, Deserializer};
 
 use arrayvec::ArrayString;
@@ -164,7 +164,7 @@ impl CurrencyCode {
     }
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde-support")]
 impl<'de> Deserialize<'de> for CurrencyCode {
     fn deserialize<D>(deserializer: D) -> std::result::Result<CurrencyCode, D::Error>
     where
