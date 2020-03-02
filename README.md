@@ -1,4 +1,4 @@
-# Commodity [![](http://meritbadge.herokuapp.com/commodity)](https://crates.io/crates/commodity) [![](https://img.shields.io/github/license/kellpossible/commodity)](https://github.com/kellpossible/commodity/blob/master/LICENSE.txt) [![](https://docs.rs/commodity/badge.svg)](https://docs.rs/commodity/)
+# Commodity [![](https://img.shields.io/crates/v/commodity.svg)](https://crates.io/crates/commodity) [![](https://img.shields.io/github/license/kellpossible/commodity)](https://github.com/kellpossible/commodity/blob/master/LICENSE.txt) [![](https://docs.rs/commodity/badge.svg)](https://docs.rs/commodity/)
 
 A library for representing commodities/currencies in Rust, with values backed by the [rust_decimal](https://crates.io/crates/rust_decimal) library.
 
