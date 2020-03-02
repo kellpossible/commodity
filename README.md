@@ -1,6 +1,6 @@
 # Commodity
 
-A library for representing commodities/currencies in Rust.
+A library for representing commodities/currencies in Rust, with values backed by the [rust_decimal](https://crates.io/crates/rust_decimal) library.
 
 ## Optional Features
 
