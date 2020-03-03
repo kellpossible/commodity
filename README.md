@@ -8,7 +8,6 @@ The following features can be enabled to provide extra functionality:
 
 + `serde-support`
   + Enables support for serialization/de-serialization via `serde`
-  + Enables support for json serialization/de-serialization via `serde_json`
 
 ## Example
 
