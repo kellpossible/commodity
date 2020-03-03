@@ -5,7 +5,7 @@
 //! The commodity package has the following optional cargo features:
 //!
 //! + `serde-support`
-//!   + Optional
+//!   + Disabled by default
 //!   + Enables support for serialization/de-serialization via `serde`
 //!
 //! # Usage
