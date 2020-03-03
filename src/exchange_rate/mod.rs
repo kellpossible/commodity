@@ -105,8 +105,7 @@ mod tests {
     fn test_json_serialization() {
         use serde_json;
 
-        let original_data = r#"
-{
+        let original_data = r#"{
     "date": "2020-02-07",
     "base": "AUD",
     "rates": {
