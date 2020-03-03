@@ -1,10 +1,9 @@
-#[cfg(feature = "serde-support")]
-use serde::{Deserialize, Deserializer};
-
 use arrayvec::ArrayString;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::prelude::Zero;
 use rust_decimal::Decimal;
+#[cfg(feature = "serde-support")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
@@ -15,7 +14,7 @@ use thiserror::Error;
 pub const CURRENCY_CODE_LENGTH: usize = 8;
 
 /// The type used to store the value of a [CurrencyCode](CurrencyCode).
-/// This array backed string has a fixed maximum size 
+/// This array backed string has a fixed maximum size
 /// of [CURRENCY_CODE_LENGTH](CURRENCY_CODE_LENGTH).
 type CurrencyCodeArray = ArrayString<[u8; CURRENCY_CODE_LENGTH]>;
 
@@ -43,6 +42,7 @@ pub enum CommodityError {
 /// [Commodity](Commodity). See [CurrencyCode](CurrencyCode) for the
 /// primative which is genarally stored and used to refer to a given
 /// [Currency](Currency).
+#[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Currency {
     /// Stores the code/id of this currency in a fixed length
@@ -222,6 +222,16 @@ impl<'de> Deserialize<'de> for CurrencyCode {
     }
 }
 
+#[cfg(feature = "serde-support")]
+impl Serialize for CurrencyCode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.code_array)
+    }
+}
+
 impl PartialEq<CurrencyCode> for &str {
     fn eq(&self, other: &CurrencyCode) -> bool {
         match CurrencyCodeArray::from_str(self) {
@@ -238,6 +248,7 @@ impl fmt::Display for CurrencyCode {
 }
 
 /// A commodity, which holds a value of a type of [Currrency](Currency)
+#[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Commodity {
     pub value: Decimal,
@@ -266,7 +277,7 @@ impl Commodity {
     /// Create a new [Commodity](Commodity).
     ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// # use commodity::{Commodity};
     /// use commodity::CurrencyCode;
@@ -275,11 +286,11 @@ impl Commodity {
     ///
     /// let currency_code = CurrencyCode::from_str("USD").unwrap();
     /// let commodity = Commodity::new(Decimal::new(202, 2), currency_code);
-    /// 
+    ///
     /// assert_eq!(Decimal::from_str("2.02").unwrap(), commodity.value);
     /// assert_eq!(currency_code, commodity.currency_code)
     /// ```
-    /// 
+    ///
     /// Using using the `Into` trait to accept `Currency` as the `currency_code`:
     /// ```
     /// # use commodity::{Commodity};
@@ -416,7 +427,7 @@ impl Commodity {
     /// ```
     pub fn divide_share(&self, i: i64, dp: u32) -> Vec<Commodity> {
         // TODO: rework this algorithm
-        // 
+        //
         // Consider the following idea:
         // Use the normal divide, then round it. Sum it up, and
         // subtract this from the original number, to get the
@@ -490,7 +501,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity};
     /// use std::str::FromStr;
-    /// 
+    ///
     /// let aud1 = Commodity::from_str("1.0 AUD").unwrap();
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     /// let nzd = Commodity::from_str("1.0 NZD").unwrap();
@@ -510,7 +521,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity};
     /// use std::str::FromStr;
-    /// 
+    ///
     /// let aud1 = Commodity::from_str("1.0 AUD").unwrap();
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     ///
@@ -535,7 +546,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity};
     /// use std::str::FromStr;
-    /// 
+    ///
     /// let aud1 = Commodity::from_str("1.0 AUD").unwrap();
     /// let aud2 = Commodity::from_str("2.0 AUD").unwrap();
     ///
@@ -559,7 +570,7 @@ impl Commodity {
     /// ```
     /// # use commodity::{Commodity};
     /// use std::str::FromStr;
-    /// 
+    ///
     /// let aud1 = Commodity::from_str("-1.0 AUD").unwrap();
     /// assert_eq!(Commodity::from_str("1.0 AUD").unwrap(), aud1.abs());
     ///
@@ -654,7 +665,7 @@ impl fmt::Display for Commodity {
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, CurrencyCode, CommodityError};
+    use super::{Commodity, CommodityError, CurrencyCode};
     use rust_decimal::Decimal;
     use std::str::FromStr;
 
@@ -723,5 +734,33 @@ mod tests {
             },
             error2
         );
+    }
+
+    #[cfg(feature = "serde-support")]
+    #[test]
+    fn test_currency_code_json_serialization() {
+        use serde_json;
+
+        let original_data = "\"AUD\"";
+        let currency_code: CurrencyCode = serde_json::from_str(original_data).unwrap();
+
+        assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency_code);
+
+        let serialized_data = serde_json::to_string(&currency_code).unwrap();
+        assert_eq!(original_data, serialized_data);
+    }
+
+    #[cfg(feature = "serde-support")]
+    #[test]
+    fn test_commodity_json_serialization() {
+        use serde_json;
+
+        let original_data = "\"AUD\"";
+        let currency_code: CurrencyCode = serde_json::from_str(original_data).unwrap();
+
+        assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency_code);
+
+        let serialized_data = serde_json::to_string(&currency_code).unwrap();
+        assert_eq!(original_data, serialized_data);
     }
 }

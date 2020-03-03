@@ -1,4 +1,4 @@
-//! Types and utilities relating to exchange rates and conversions 
+//! Types and utilities relating to exchange rates and conversions
 //! between different types of commodities.
 
 use crate::{Commodity, CurrencyCode};
@@ -6,7 +6,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 
 #[cfg(feature = "serde-support")]
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 use thiserror::Error;
@@ -18,9 +18,9 @@ pub enum ExchangeRateError {
     CurrencyNotPresent(CurrencyCode),
 }
 
-/// Represents the exchange rate between [Commodity](Commodity)s 
+/// Represents the exchange rate between [Commodity](Commodity)s
 /// with different [Currency](crate::Currency)s.
-#[cfg_attr(feature = "serde", derive(Deserialize))]
+#[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct ExchangeRate {
     /// The datetime that this exchange rate represents
@@ -102,21 +102,21 @@ mod tests {
 
     #[cfg(feature = "serde-support")]
     #[test]
-    fn test_deserialize() {
+    fn test_json_serialization() {
         use serde_json;
 
-        let data = r#"
-            {
-                "date": "2020-02-07",
-                "base": "AUD",
-                "rates": {
-                    "USD": 2.542,
-                    "EU": "1.234"
-                }
-            }
-            "#;
+        let original_data = r#"
+{
+    "date": "2020-02-07",
+    "base": "AUD",
+    "rates": {
+        "USD": 2.542,
+        "EU": "1.234"
+    }
+}
+"#;
 
-        let exchange_rate: ExchangeRate = serde_json::from_str(data).unwrap();
+        let exchange_rate: ExchangeRate = serde_json::from_str(original_data).unwrap();
         let usd = CurrencyCode::from_str("USD").unwrap();
         let eu = CurrencyCode::from_str("EU").unwrap();
 
@@ -133,6 +133,21 @@ mod tests {
             Decimal::from_str("1.234").unwrap(),
             *exchange_rate.get_rate(&eu).unwrap()
         );
+
+        let expected_serialized_data = r#"{
+  "date": "2020-02-07",
+  "obtained_datetime": null,
+  "base": "AUD",
+  "rates": {
+    "EU": "1.234",
+    "USD": "2.542"
+  }
+}"#;
+
+        dbg!(&exchange_rate);
+
+        let serialized_data = serde_json::to_string_pretty(&exchange_rate).unwrap();
+        assert_eq!(expected_serialized_data, serialized_data);
     }
 
     #[test]

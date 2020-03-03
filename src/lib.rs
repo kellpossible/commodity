@@ -66,6 +66,10 @@ extern crate rust_decimal;
 #[cfg(feature = "serde-support")]
 extern crate serde;
 
+#[cfg(test)]
+#[cfg(feature = "serde-support")]
+extern crate serde_json;
+
 mod commodity;
 pub mod exchange_rate;
 
