@@ -73,3 +73,10 @@ mod commodity;
 pub mod exchange_rate;
 
 pub use crate::commodity::*;
+
+#[cfg(doctest)]
+#[macro_use]
+extern crate doc_comment;
+
+#[cfg(doctest)]
+doctest!("../README.md");
