@@ -1,6 +1,6 @@
 # Changelog for Commodity
 
-## Version 0.3
+## v0.3.0
 
 + Renamed `Currency` to `CommodityType` and associated member variables to address issue #1
 + Renamed `CurrencyCode` to `CommodityTypeID` and associated member variables
