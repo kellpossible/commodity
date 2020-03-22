@@ -38,8 +38,9 @@ pub enum CommodityError {
     InvalidCommodityString(String),
 }
 
-/// Represents a type of [Commodity](Commodity). See
-/// [CommodityTypeID](CommodityTypeID) for the primative which is
+/// Represents a type of [Commodity](Commodity).
+///
+/// See [CommodityTypeID](CommodityTypeID) for the primative which is
 /// genarally stored and used to refer to a given
 /// [CommodityType](CommodityType).
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
@@ -54,7 +55,7 @@ pub struct CommodityType {
 }
 
 impl CommodityType {
-    /// Create a new [CommodityType](CommodityType)
+    /// Create a new [CommodityType](CommodityType).
     ///
     /// # Example
     /// ```
@@ -105,8 +106,8 @@ impl CommodityType {
         Ok(CommodityType::new(id, name))
     }
 
-    /// Construct a [CommodityType](CommodityType) by looking it up in the iso4217
-    /// commodity_type database.
+    /// Construct a [CommodityType](CommodityType) by looking it up in the `ISO4217`
+    /// currencies database.
     ///
     /// # Example
     /// ```
@@ -124,22 +125,23 @@ impl CommodityType {
     }
 }
 
-/// Return a vector of all iso4217 currencies
+/// Return a vector of all `ISO4217` currencies
 pub fn all_iso4217_currencies() -> Vec<CommodityType> {
     let mut currencies = Vec::new();
     for iso_commodity_type in iso4217::all() {
-        currencies.push(CommodityType::from_str(iso_commodity_type.alpha3, iso_commodity_type.name).unwrap());
+        currencies.push(
+            CommodityType::from_str(iso_commodity_type.alpha3, iso_commodity_type.name).unwrap(),
+        );
     }
 
     return currencies;
 }
 
-/// The id of a [CommodityType](CommodityType).
+/// The id of a [CommodityType](CommodityType) stored in a fixed
+/// length array using [ArrayString](ArrayString), with a maximum
+/// length of [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CommodityTypeID {
-    /// This is a fixed length array of characters of length
-    /// [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH), with a backing
-    /// implementation based on [ArrayString](ArrayString).
     id_array: CommodityTypeIDArray,
 }
 
@@ -173,7 +175,9 @@ impl FromStr for CommodityTypeID {
             return Err(CommodityError::TooLongCommodityTypeID(String::from(id)));
         }
 
-        return Ok(CommodityTypeID::new(CommodityTypeIDArray::from(id).unwrap()));
+        return Ok(CommodityTypeID::new(
+            CommodityTypeIDArray::from(id).unwrap(),
+        ));
     }
 }
 
@@ -248,11 +252,13 @@ impl fmt::Display for CommodityTypeID {
     }
 }
 
-/// A commodity, which holds a value of a type of [Currrency](CommodityType)
+/// A commodity, which holds a value with an associated [CommodityType](CommodityType)
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Commodity {
+    /// The value of this commodity
     pub value: Decimal,
+    /// The id of the type of this commodity
     pub type_id: CommodityTypeID,
 }
 

@@ -55,7 +55,10 @@ impl ExchangeRate {
                 if commodity.type_id == base {
                     match self.get_rate(&target_commodity_type) {
                         Some(rate) => {
-                            return Ok(Commodity::new(rate * commodity.value, target_commodity_type))
+                            return Ok(Commodity::new(
+                                rate * commodity.value,
+                                target_commodity_type,
+                            ))
                         }
                         None => {}
                     };
@@ -64,7 +67,10 @@ impl ExchangeRate {
                 if target_commodity_type == base {
                     match self.get_rate(&commodity.type_id) {
                         Some(rate) => {
-                            return Ok(Commodity::new(commodity.value / rate, target_commodity_type))
+                            return Ok(Commodity::new(
+                                commodity.value / rate,
+                                target_commodity_type,
+                            ))
                         }
                         None => {}
                     };
@@ -87,7 +93,11 @@ impl ExchangeRate {
 
         let target_rate = match self.get_rate(&target_commodity_type) {
             Some(rate) => rate,
-            None => return Err(ExchangeRateError::CommodityTypeNotPresent(target_commodity_type)),
+            None => {
+                return Err(ExchangeRateError::CommodityTypeNotPresent(
+                    target_commodity_type,
+                ))
+            }
         };
 
         let value = (commodity.value / commodity_rate) * target_rate;
