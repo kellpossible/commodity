@@ -8,15 +8,15 @@ use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
 
-/// The length of the [CurrencyCodeArray](CurrencyCodeArray) type,
-/// used to store the code/id for a given [Currency](Currency) in
-/// [CurrencyCode](CurrencyCode).
-pub const CURRENCY_CODE_LENGTH: usize = 8;
+/// The length of the [CommodityTypeIDArray](CommodityTypeIDArray) type,
+/// used to store the id for a given [CommodityType](CommodityType) in
+/// [CommodityTypeID](CommodityTypeID).
+pub const COMMODITY_TYPE_ID_LENGTH: usize = 8;
 
-/// The type used to store the value of a [CurrencyCode](CurrencyCode).
+/// The type used to store the value of a [CommodityTypeID](CommodityTypeID).
 /// This array backed string has a fixed maximum size
-/// of [CURRENCY_CODE_LENGTH](CURRENCY_CODE_LENGTH).
-type CurrencyCodeArray = ArrayString<[u8; CURRENCY_CODE_LENGTH]>;
+/// of [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH).
+type CommodityTypeIDArray = ArrayString<[u8; COMMODITY_TYPE_ID_LENGTH]>;
 
 /// An error associated with functionality in the [commodity](./index.html) module.
 #[derive(Error, Debug, PartialEq)]
@@ -28,73 +28,73 @@ pub enum CommodityError {
         reason: String,
     },
     #[error(
-        "The currency code {0} is too long. Maximum of {} characters allowed.",
-        CURRENCY_CODE_LENGTH
+        "The commodity id {0} is too long. Maximum of {} characters allowed.",
+        COMMODITY_TYPE_ID_LENGTH
     )]
-    TooLongCurrencyCode(String),
+    TooLongCommodityTypeID(String),
     #[error("The provided alpha3 code {0} doesn't match any in the iso4217 database")]
     InvalidISO4217Alpha3(String),
-    #[error("The provided string {0} is invalid, it should be a decimal followed by a currency. e.g. 1.234 USD")]
+    #[error("The provided string {0} is invalid, it should be a decimal followed by a commodity_type. e.g. 1.234 USD")]
     InvalidCommodityString(String),
 }
 
-/// Represents a the type of currency held in a
-/// [Commodity](Commodity). See [CurrencyCode](CurrencyCode) for the
-/// primative which is genarally stored and used to refer to a given
-/// [Currency](Currency).
+/// Represents a type of [Commodity](Commodity). See
+/// [CommodityTypeID](CommodityTypeID) for the primative which is
+/// genarally stored and used to refer to a given
+/// [CommodityType](CommodityType).
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
-pub struct Currency {
-    /// Stores the code/id of this currency in a fixed length
+pub struct CommodityType {
+    /// Stores the id of this commodity type in a fixed length
     /// [ArrayString](ArrayString), with a maximum length of
-    /// [CURRENCY_CODE_LENGTH](CURRENCY_CODE_LENGTH).
-    pub code: CurrencyCode,
-    /// The human readable name of this currency.
+    /// [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH).
+    pub id: CommodityTypeID,
+    /// The human readable name of this commodity_type.
     pub name: Option<String>,
 }
 
-impl Currency {
-    /// Create a new [Currency](Currency)
+impl CommodityType {
+    /// Create a new [CommodityType](CommodityType)
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Currency, CurrencyCode};
+    /// # use commodity::{CommodityType, CommodityTypeID};
     /// use std::str::FromStr;
     ///
-    /// let code = CurrencyCode::from_str("AUD").unwrap();
-    /// let currency = Currency::new(
-    ///     code,
+    /// let id = CommodityTypeID::from_str("AUD").unwrap();
+    /// let commodity_type = CommodityType::new(
+    ///     id,
     ///     Some(String::from("Australian Dollar"))
     /// );
     ///
-    /// assert_eq!(code, currency.code);
-    /// assert_eq!(Some(String::from("Australian Dollar")), currency.name);
+    /// assert_eq!(id, commodity_type.id);
+    /// assert_eq!(Some(String::from("Australian Dollar")), commodity_type.name);
     /// ```
-    pub fn new(code: CurrencyCode, name: Option<String>) -> Currency {
-        Currency { code, name }
+    pub fn new(id: CommodityTypeID, name: Option<String>) -> CommodityType {
+        CommodityType { id, name }
     }
 
-    /// Create a [Currency](Currency) from strings, usually for
-    /// debugging, or unit testing purposes.
+    /// Create a [CommodityType](CommodityType) from strings, usually
+    /// for debugging, or unit testing purposes.
     ///
-    /// `code` is an array backed string that has a fixed maximum size
-    /// of [CURRENCY_CODE_LENGTH](CURRENCY_CODE_LENGTH). The supplied
+    /// `id` is an array backed string that has a fixed maximum size
+    /// of [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH). The supplied
     /// string must not exeed this, or a
-    /// [CommodityError::TooLongCurrencyCode](CommodityError::TooLongCurrencyCode)
+    /// [CommodityError::TooLongCommodityTypeID](CommodityError::TooLongCommodityTypeID)
     /// will be returned.
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Currency, CurrencyCode};
+    /// # use commodity::{CommodityType, CommodityTypeID};
     /// use std::str::FromStr;
     ///
-    /// let currency = Currency::from_str("AUD", "Australian dollar").unwrap();
+    /// let commodity_type = CommodityType::from_str("AUD", "Australian dollar").unwrap();
     ///
-    /// assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency.code);
-    /// assert_eq!("Australian dollar", currency.name.unwrap());
+    /// assert_eq!(CommodityTypeID::from_str("AUD").unwrap(), commodity_type.id);
+    /// assert_eq!("Australian dollar", commodity_type.name.unwrap());
     /// ```
-    pub fn from_str(code: &str, name: &str) -> Result<Currency, CommodityError> {
-        let code = CurrencyCode::from_str(code)?;
+    pub fn from_str(id: &str, name: &str) -> Result<CommodityType, CommodityError> {
+        let id = CommodityTypeID::from_str(id)?;
 
         let name = if name.len() == 0 {
             None
@@ -102,104 +102,105 @@ impl Currency {
             Some(String::from(name))
         };
 
-        Ok(Currency::new(code, name))
+        Ok(CommodityType::new(id, name))
     }
 
-    /// Construct a [Currency](Currency) by looking it up in the iso4217
-    /// currency database.
+    /// Construct a [CommodityType](CommodityType) by looking it up in the iso4217
+    /// commodity_type database.
     ///
     /// # Example
     /// ```
-    /// # use commodity::Currency;
+    /// # use commodity::CommodityType;
     ///
-    /// let currency = Currency::from_alpha3("AUD").unwrap();
-    /// assert_eq!("AUD", currency.code);
-    /// assert_eq!(Some(String::from("Australian dollar")), currency.name);
+    /// let commodity_type = CommodityType::from_currency_alpha3("AUD").unwrap();
+    /// assert_eq!("AUD", commodity_type.id);
+    /// assert_eq!(Some(String::from("Australian dollar")), commodity_type.name);
     /// ```
-    pub fn from_alpha3(alpha3: &str) -> Result<Currency, CommodityError> {
+    pub fn from_currency_alpha3(alpha3: &str) -> Result<CommodityType, CommodityError> {
         match iso4217::alpha3(alpha3) {
-            Some(code) => Currency::from_str(alpha3, code.name),
+            Some(id) => CommodityType::from_str(alpha3, id.name),
             None => Err(CommodityError::InvalidISO4217Alpha3(String::from(alpha3))),
         }
     }
 }
 
 /// Return a vector of all iso4217 currencies
-pub fn all_iso4217_currencies() -> Vec<Currency> {
+pub fn all_iso4217_currencies() -> Vec<CommodityType> {
     let mut currencies = Vec::new();
-    for iso_currency in iso4217::all() {
-        currencies.push(Currency::from_str(iso_currency.alpha3, iso_currency.name).unwrap());
+    for iso_commodity_type in iso4217::all() {
+        currencies.push(CommodityType::from_str(iso_commodity_type.alpha3, iso_commodity_type.name).unwrap());
     }
 
     return currencies;
 }
 
-/// The code/id of a [Currency](Currency).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct CurrencyCode {
-    /// This is a fixed length array of characters of length [CURRENCY_CODE_LENGTH](CURRENCY_CODE_LENGTH),
-    /// with a backing implementation based on [ArrayString](ArrayString).
-    code_array: CurrencyCodeArray,
+/// The id of a [CommodityType](CommodityType).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct CommodityTypeID {
+    /// This is a fixed length array of characters of length
+    /// [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH), with a backing
+    /// implementation based on [ArrayString](ArrayString).
+    id_array: CommodityTypeIDArray,
 }
 
-impl CurrencyCode {
-    /// Create a new [CurrencyCode](CurrencyCode).
-    pub fn new(code_array: CurrencyCodeArray) -> CurrencyCode {
-        CurrencyCode { code_array }
+impl CommodityTypeID {
+    /// Create a new [CommodityTypeID](CommodityTypeID).
+    pub fn new(id_array: CommodityTypeIDArray) -> CommodityTypeID {
+        CommodityTypeID { id_array }
     }
 }
 
-impl FromStr for CurrencyCode {
+impl FromStr for CommodityTypeID {
     type Err = CommodityError;
 
-    /// Create a new [Currency](Currency).
+    /// Create a new [CommodityType](CommodityType).
     ///
     /// `code` is an array backed string that has a fixed maximum size
-    /// of [CURRENCY_CODE_LENGTH](CURRENCY_CODE_LENGTH). The supplied
+    /// of [COMMODITY_TYPE_ID_LENGTH](COMMODITY_TYPE_ID_LENGTH). The supplied
     /// string must not exeed this, or a
-    /// [CommodityError::TooLongCurrencyCode](CommodityError::TooLongCurrencyCode)
+    /// [CommodityError::TooLongCommodityTypeID](CommodityError::TooLongCommodityTypeID)
     /// will be returned.
     ///
     /// # Example
     /// ```
-    /// # use commodity::CurrencyCode;
+    /// # use commodity::CommodityTypeID;
     /// use std::str::FromStr;
-    /// let currency_code = CurrencyCode::from_str("AUD").unwrap();
-    /// assert_eq!("AUD", currency_code);
+    /// let commodity_id = CommodityTypeID::from_str("AUD").unwrap();
+    /// assert_eq!("AUD", commodity_id);
     /// ```
-    fn from_str(code: &str) -> Result<CurrencyCode, CommodityError> {
-        if code.len() > CURRENCY_CODE_LENGTH {
-            return Err(CommodityError::TooLongCurrencyCode(String::from(code)));
+    fn from_str(id: &str) -> Result<CommodityTypeID, CommodityError> {
+        if id.len() > COMMODITY_TYPE_ID_LENGTH {
+            return Err(CommodityError::TooLongCommodityTypeID(String::from(id)));
         }
 
-        return Ok(CurrencyCode::new(CurrencyCodeArray::from(code).unwrap()));
+        return Ok(CommodityTypeID::new(CommodityTypeIDArray::from(id).unwrap()));
     }
 }
 
-impl From<&Currency> for CurrencyCode {
-    fn from(currency: &Currency) -> CurrencyCode {
-        currency.code
+impl From<&CommodityType> for CommodityTypeID {
+    fn from(commodity_type: &CommodityType) -> CommodityTypeID {
+        commodity_type.id
     }
 }
 
 #[cfg(feature = "serde-support")]
-impl<'de> Deserialize<'de> for CurrencyCode {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<CurrencyCode, D::Error>
+impl<'de> Deserialize<'de> for CommodityTypeID {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<CommodityTypeID, D::Error>
     where
         D: Deserializer<'de>,
     {
         use serde::de::{self, Visitor};
 
-        struct CurrencyCodeVisitor;
+        struct CommodityTypeIDVisitor;
 
-        impl<'de> Visitor<'de> for CurrencyCodeVisitor {
-            type Value = CurrencyCode;
+        impl<'de> Visitor<'de> for CommodityTypeIDVisitor {
+            type Value = CommodityTypeID;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str(
                     format!(
                         "a string with a maximum of {} characters",
-                        CURRENCY_CODE_LENGTH
+                        COMMODITY_TYPE_ID_LENGTH
                     )
                     .as_ref(),
                 )
@@ -209,55 +210,55 @@ impl<'de> Deserialize<'de> for CurrencyCode {
             where
                 E: de::Error,
             {
-                CurrencyCode::from_str(v).map_err(|e| {
+                CommodityTypeID::from_str(v).map_err(|e| {
                     E::custom(format!(
-                        "there was an error ({}) parsing the currency code string",
+                        "there was an error ({}) parsing the commodity_type id string",
                         e
                     ))
                 })
             }
         }
 
-        deserializer.deserialize_str(CurrencyCodeVisitor)
+        deserializer.deserialize_str(CommodityTypeIDVisitor)
     }
 }
 
 #[cfg(feature = "serde-support")]
-impl Serialize for CurrencyCode {
+impl Serialize for CommodityTypeID {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.code_array)
+        serializer.serialize_str(&self.id_array)
     }
 }
 
-impl PartialEq<CurrencyCode> for &str {
-    fn eq(&self, other: &CurrencyCode) -> bool {
-        match CurrencyCodeArray::from_str(self) {
-            Ok(self_as_code) => self_as_code == other.code_array,
+impl PartialEq<CommodityTypeID> for &str {
+    fn eq(&self, other: &CommodityTypeID) -> bool {
+        match CommodityTypeIDArray::from_str(self) {
+            Ok(self_as_code) => self_as_code == other.id_array,
             Err(_) => false,
         }
     }
 }
 
-impl fmt::Display for CurrencyCode {
+impl fmt::Display for CommodityTypeID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.code_array)
+        write!(f, "{}", self.id_array)
     }
 }
 
-/// A commodity, which holds a value of a type of [Currrency](Currency)
+/// A commodity, which holds a value of a type of [Currrency](CommodityType)
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Commodity {
     pub value: Decimal,
-    pub currency_code: CurrencyCode,
+    pub type_id: CommodityTypeID,
 }
 
 /// Check whether the currencies of two commodities are compatible (the same),
-/// if they aren't then return a [IncompatableCommodity](CurrencyError::IncompatableCommodity) error in the `Result`.
-fn check_currency_compatible(
+/// if they aren't then return a [IncompatableCommodity](CommodityTypeError::IncompatableCommodity) error in the `Result`.
+fn check_commodity_type_compatible(
     this_commodity: &Commodity,
     other_commodity: &Commodity,
     reason: String,
@@ -279,38 +280,36 @@ impl Commodity {
     /// # Example
     ///
     /// ```
-    /// # use commodity::{Commodity};
-    /// use commodity::CurrencyCode;
+    /// use commodity::{Commodity, CommodityTypeID};
     /// use std::str::FromStr;
     /// use rust_decimal::Decimal;
     ///
-    /// let currency_code = CurrencyCode::from_str("USD").unwrap();
-    /// let commodity = Commodity::new(Decimal::new(202, 2), currency_code);
+    /// let type_id = CommodityTypeID::from_str("USD").unwrap();
+    /// let commodity = Commodity::new(Decimal::new(202, 2), type_id);
     ///
     /// assert_eq!(Decimal::from_str("2.02").unwrap(), commodity.value);
-    /// assert_eq!(currency_code, commodity.currency_code)
+    /// assert_eq!(type_id, commodity.type_id)
     /// ```
     ///
-    /// Using using the `Into` trait to accept `Currency` as the `currency_code`:
+    /// Using using the `Into` trait to accept `CommodityType` as the `type_id`:
     /// ```
-    /// # use commodity::{Commodity};
+    /// use commodity::{Commodity, CommodityType};
     /// use std::str::FromStr;
-    /// use commodity::Currency;
     /// use rust_decimal::Decimal;
     ///
-    /// let currency = Currency::from_alpha3("USD").unwrap();
-    /// let commodity = Commodity::new(Decimal::new(202, 2), &currency);
+    /// let commodity_type = CommodityType::from_currency_alpha3("USD").unwrap();
+    /// let commodity = Commodity::new(Decimal::new(202, 2), &commodity_type);
     /// ```
-    pub fn new<T: Into<CurrencyCode>>(value: Decimal, currency_code: T) -> Commodity {
+    pub fn new<T: Into<CommodityTypeID>>(value: Decimal, type_id: T) -> Commodity {
         Commodity {
-            currency_code: currency_code.into(),
+            type_id: type_id.into(),
             value,
         }
     }
 
     /// Create a commodity with a value of zero
-    pub fn zero(currency_code: CurrencyCode) -> Commodity {
-        Commodity::new(Decimal::zero(), currency_code)
+    pub fn zero(type_id: CommodityTypeID) -> Commodity {
+        Commodity::new(Decimal::zero(), type_id)
     }
 
     /// Add the value of commodity `other` to `self`
@@ -318,28 +317,28 @@ impl Commodity {
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
+    /// # use commodity::{Commodity, CommodityTypeID};
     /// use rust_decimal::Decimal;
     /// use std::str::FromStr;
     ///
-    /// let currency_code = CurrencyCode::from_str("USD").unwrap();
-    /// let commodity1 = Commodity::new(Decimal::new(400, 2), currency_code);
-    /// let commodity2 = Commodity::new(Decimal::new(250, 2), currency_code);
+    /// let type_id = CommodityTypeID::from_str("USD").unwrap();
+    /// let commodity1 = Commodity::new(Decimal::new(400, 2), type_id);
+    /// let commodity2 = Commodity::new(Decimal::new(250, 2), type_id);
     ///
     /// // perform the add
     /// let result = commodity1.add(&commodity2).unwrap();
     ///
     /// assert_eq!(Decimal::new(650, 2), result.value);
-    /// assert_eq!(currency_code, result.currency_code);
+    /// assert_eq!(type_id, result.type_id);
     /// ```
     pub fn add(&self, other: &Commodity) -> Result<Commodity, CommodityError> {
-        check_currency_compatible(
+        check_commodity_type_compatible(
             self,
             other,
             String::from("cannot add commodities with different currencies"),
         )?;
 
-        return Ok(Commodity::new(self.value + other.value, self.currency_code));
+        return Ok(Commodity::new(self.value + other.value, self.type_id));
     }
 
     /// Subtract the value of commodity `other` from `self`
@@ -347,49 +346,49 @@ impl Commodity {
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
+    /// # use commodity::{Commodity, CommodityTypeID};
     /// use rust_decimal::Decimal;
     /// use std::str::FromStr;
     ///
-    /// let currency_code = CurrencyCode::from_str("USD").unwrap();
-    /// let commodity1 = Commodity::new(Decimal::new(400, 2), currency_code);
-    /// let commodity2 = Commodity::new(Decimal::new(250, 2), currency_code);
+    /// let usd = CommodityTypeID::from_str("USD").unwrap();
+    /// let commodity1 = Commodity::new(Decimal::new(400, 2), usd);
+    /// let commodity2 = Commodity::new(Decimal::new(250, 2), usd);
     ///
     /// // perform the subtraction
     /// let result = commodity1.sub(&commodity2).unwrap();
     ///
     /// assert_eq!(Decimal::new(150, 2), result.value);
-    /// assert_eq!(currency_code, result.currency_code);
+    /// assert_eq!(usd, result.type_id);
     /// ```
     pub fn sub(&self, other: &Commodity) -> Result<Commodity, CommodityError> {
-        check_currency_compatible(
+        check_commodity_type_compatible(
             self,
             other,
             String::from("cannot subtract commodities with different currencies"),
         )?;
 
-        return Ok(Commodity::new(self.value - other.value, self.currency_code));
+        return Ok(Commodity::new(self.value - other.value, self.type_id));
     }
 
     /// Negate the value of this commodity such that `result = -self`
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
+    /// # use commodity::{Commodity, CommodityTypeID};
     /// # use std::str::FromStr;
     /// use rust_decimal::Decimal;
     ///
-    /// let currency_code = CurrencyCode::from_str("USD").unwrap();
-    /// let commodity = Commodity::new(Decimal::new(202, 2), currency_code);
+    /// let type_id = CommodityTypeID::from_str("USD").unwrap();
+    /// let commodity = Commodity::new(Decimal::new(202, 2), type_id);
     ///
     /// // perform the negation
     /// let result = commodity.neg();
     ///
     /// assert_eq!(Decimal::from_str("-2.02").unwrap(), result.value);
-    /// assert_eq!(currency_code, result.currency_code)
+    /// assert_eq!(type_id, result.type_id)
     /// ```
     pub fn neg(&self) -> Commodity {
-        Commodity::new(-self.value, self.currency_code)
+        Commodity::new(-self.value, self.type_id)
     }
 
     /// Divide this commodity by the specified integer value
@@ -406,7 +405,7 @@ impl Commodity {
     /// ```
     pub fn div_i64(&self, i: i64) -> Commodity {
         let decimal = Decimal::new(i * 100, 2);
-        Commodity::new(self.value / decimal, self.currency_code)
+        Commodity::new(self.value / decimal, self.type_id)
     }
 
     /// Divide this commodity by the specified integer value
@@ -468,7 +467,7 @@ impl Commodity {
                 truncated
             };
 
-            commodities.push(Commodity::new(value, self.currency_code))
+            commodities.push(Commodity::new(value, self.type_id))
         }
 
         dbg!(commodities.clone());
@@ -476,22 +475,22 @@ impl Commodity {
         return commodities;
     }
 
-    /// Convert this commodity to a different currency using a conversion rate.
+    /// Convert this commodity to a different commodity_type using a conversion rate.
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
+    /// # use commodity::{Commodity, CommodityTypeID};
     /// use rust_decimal::Decimal;
     /// use std::str::FromStr;
     ///
     /// let aud = Commodity::from_str("100.00 AUD").unwrap();
-    /// let usd = aud.convert(CurrencyCode::from_str("USD").unwrap(), Decimal::from_str("0.01").unwrap());
+    /// let usd = aud.convert(CommodityTypeID::from_str("USD").unwrap(), Decimal::from_str("0.01").unwrap());
     ///
     /// assert_eq!(Decimal::from_str("1.00").unwrap(), usd.value);
-    /// assert_eq!("USD", usd.currency_code);
+    /// assert_eq!("USD", usd.type_id);
     /// ```
-    pub fn convert(&self, currency_code: CurrencyCode, rate: Decimal) -> Commodity {
-        Commodity::new(self.value * rate, currency_code)
+    pub fn convert(&self, type_id: CommodityTypeID, rate: Decimal) -> Commodity {
+        Commodity::new(self.value * rate, type_id)
     }
 
     /// Returns true if the currencies of both this commodity, and
@@ -510,7 +509,7 @@ impl Commodity {
     /// assert!(!aud1.compatible_with(&nzd));
     /// ```
     pub fn compatible_with(&self, other: &Commodity) -> bool {
-        return self.currency_code == other.currency_code;
+        return self.type_id == other.type_id;
     }
 
     /// Compare whether this commodity has a value less than another commodity.
@@ -529,7 +528,7 @@ impl Commodity {
     /// assert_eq!(false, aud2.lt(&aud1).unwrap());
     /// ```
     pub fn lt(&self, other: &Commodity) -> Result<bool, CommodityError> {
-        check_currency_compatible(
+        check_commodity_type_compatible(
             self,
             other,
             String::from("cannot compare commodities with different currencies"),
@@ -554,7 +553,7 @@ impl Commodity {
     /// assert_eq!(true, aud2.gt(&aud1).unwrap());
     /// ```
     pub fn gt(&self, other: &Commodity) -> Result<bool, CommodityError> {
-        check_currency_compatible(
+        check_commodity_type_compatible(
             self,
             other,
             String::from("cannot compare commodities with different currencies"),
@@ -578,7 +577,7 @@ impl Commodity {
     /// assert_eq!(Commodity::from_str("2.0 AUD").unwrap(), aud2.abs());
     /// ```
     pub fn abs(&self) -> Commodity {
-        return Commodity::new(self.value.abs(), self.currency_code);
+        return Commodity::new(self.value.abs(), self.type_id);
     }
 
     /// The default epsilon to use for comparisons between different [Commodity](Commodity)s.
@@ -586,7 +585,7 @@ impl Commodity {
         Decimal::new(1, 6)
     }
     pub fn eq_approx(&self, other: Commodity, epsilon: Decimal) -> bool {
-        if other.currency_code != self.currency_code {
+        if other.type_id != self.type_id {
             return false;
         }
 
@@ -606,14 +605,14 @@ impl FromStr for Commodity {
     ///
     /// # Example
     /// ```
-    /// # use commodity::{Commodity, CurrencyCode};
+    /// # use commodity::{Commodity, CommodityTypeID};
     /// use std::str::FromStr;
     /// use rust_decimal::Decimal;
     ///
     /// let commodity = Commodity::from_str("1.234 USD").unwrap();
     ///
     /// assert_eq!(Decimal::from_str("1.234").unwrap(), commodity.value);
-    /// assert_eq!(CurrencyCode::from_str("USD").unwrap(), commodity.currency_code);
+    /// assert_eq!(CommodityTypeID::from_str("USD").unwrap(), commodity.type_id);
     /// ```
     fn from_str(commodity_string: &str) -> Result<Commodity, CommodityError> {
         let elements: Vec<&str> = commodity_string.split_whitespace().collect();
@@ -626,14 +625,14 @@ impl FromStr for Commodity {
 
         Ok(Commodity::new(
             Decimal::from_str(elements.get(0).unwrap()).unwrap(),
-            CurrencyCode::from_str(elements.get(1).unwrap())?,
+            CommodityTypeID::from_str(elements.get(1).unwrap())?,
         ))
     }
 }
 
 impl PartialOrd for Commodity {
     fn partial_cmp(&self, other: &Commodity) -> Option<std::cmp::Ordering> {
-        check_currency_compatible(
+        check_commodity_type_compatible(
             self,
             other,
             String::from("cannot compare commodities with different currencies"),
@@ -646,7 +645,7 @@ impl PartialOrd for Commodity {
 
 impl Ord for Commodity {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        check_currency_compatible(
+        check_commodity_type_compatible(
             self,
             other,
             String::from("cannot compare commodities with different currencies"),
@@ -659,13 +658,13 @@ impl Ord for Commodity {
 
 impl fmt::Display for Commodity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.value, self.currency_code)
+        write!(f, "{} {}", self.value, self.type_id)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, CommodityError, CurrencyCode};
+    use super::{Commodity, CommodityError, CommodityTypeID};
     use rust_decimal::Decimal;
     use std::str::FromStr;
 
@@ -706,12 +705,12 @@ mod tests {
     // }
 
     #[test]
-    fn commodity_incompatible_currency() {
-        let currency1 = CurrencyCode::from_str("USD").unwrap();
-        let currency2 = CurrencyCode::from_str("AUD").unwrap();
+    fn commodity_incompatible_commodity_type() {
+        let commodity_type1 = CommodityTypeID::from_str("USD").unwrap();
+        let commodity_type2 = CommodityTypeID::from_str("AUD").unwrap();
 
-        let commodity1 = Commodity::new(Decimal::new(400, 2), currency1);
-        let commodity2 = Commodity::new(Decimal::new(250, 2), currency2);
+        let commodity1 = Commodity::new(Decimal::new(400, 2), commodity_type1);
+        let commodity2 = Commodity::new(Decimal::new(250, 2), commodity_type2);
 
         let error1 = commodity1.add(&commodity2).expect_err("expected an error");
 
@@ -738,15 +737,15 @@ mod tests {
 
     #[cfg(feature = "serde-support")]
     #[test]
-    fn test_currency_code_json_serialization() {
+    fn test_type_id_json_serialization() {
         use serde_json;
 
         let original_data = "\"AUD\"";
-        let currency_code: CurrencyCode = serde_json::from_str(original_data).unwrap();
+        let type_id: CommodityTypeID = serde_json::from_str(original_data).unwrap();
 
-        assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency_code);
+        assert_eq!(CommodityTypeID::from_str("AUD").unwrap(), type_id);
 
-        let serialized_data = serde_json::to_string(&currency_code).unwrap();
+        let serialized_data = serde_json::to_string(&type_id).unwrap();
         assert_eq!(original_data, serialized_data);
     }
 
@@ -756,11 +755,11 @@ mod tests {
         use serde_json;
 
         let original_data = "\"AUD\"";
-        let currency_code: CurrencyCode = serde_json::from_str(original_data).unwrap();
+        let type_id: CommodityTypeID = serde_json::from_str(original_data).unwrap();
 
-        assert_eq!(CurrencyCode::from_str("AUD").unwrap(), currency_code);
+        assert_eq!(CommodityTypeID::from_str("AUD").unwrap(), type_id);
 
-        let serialized_data = serde_json::to_string(&currency_code).unwrap();
+        let serialized_data = serde_json::to_string(&type_id).unwrap();
         assert_eq!(original_data, serialized_data);
     }
 }

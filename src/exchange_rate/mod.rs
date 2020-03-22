@@ -1,25 +1,25 @@
 //! Types and utilities relating to exchange rates and conversions
 //! between different types of commodities.
 
-use crate::{Commodity, CurrencyCode};
+use crate::{Commodity, CommodityTypeID};
 use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 
 #[cfg(feature = "serde-support")]
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use thiserror::Error;
 
 /// An error associated with functionality in the [exchange_rate](crate::exchange_rate) module.
 #[derive(Error, Debug)]
 pub enum ExchangeRateError {
-    #[error("the currency {0} is not present in the exchange rate")]
-    CurrencyNotPresent(CurrencyCode),
+    #[error("the commodity type with id {0} is not present in the exchange rate")]
+    CommodityTypeNotPresent(CommodityTypeID),
 }
 
 /// Represents the exchange rate between [Commodity](Commodity)s
-/// with different [Currency](crate::Currency)s.
+/// with different [CommodityType](crate::CommodityType)s.
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct ExchangeRate {
@@ -27,41 +27,44 @@ pub struct ExchangeRate {
     pub date: Option<NaiveDate>,
     /// The datetime that this exchange rate was obtained.
     pub obtained_datetime: Option<DateTime<Utc>>,
-    /// The base currency for the exchange rate
-    pub base: Option<CurrencyCode>,
-    /// Maps currency codes, to the conversion rate from that currency
-    /// to the base currency.
-    pub rates: HashMap<CurrencyCode, Decimal>,
+    /// The id of the base commodity type for the exchange rate
+    pub base: Option<CommodityTypeID>,
+    /// Maps commodity type ids, to the conversion rate from that
+    /// [CommodityType](crate::CommodityType) to the `base`
+    /// [CommodityType](crate::CommodityType).
+    pub rates: BTreeMap<CommodityTypeID, Decimal>,
 }
 
 impl ExchangeRate {
-    pub fn get_rate(&self, currency_code: &CurrencyCode) -> Option<&Decimal> {
-        self.rates.get(currency_code)
+    pub fn get_rate(&self, commodity_type_id: &CommodityTypeID) -> Option<&Decimal> {
+        self.rates.get(commodity_type_id)
     }
 
-    /// Convert the currency of a [Commodity](Commodity) from one currency to another
-    /// using this [ExchangeRate](ExchangeRate).
+    /// Convert the [CommodityType](crate::CommodityType) of a
+    /// [Commodity](Commodity) to another
+    /// [CommodityType](crate::CommodityType) using this
+    /// [ExchangeRate](ExchangeRate).
     pub fn convert(
         &self,
         commodity: Commodity,
-        target_currency: CurrencyCode,
+        target_commodity_type: CommodityTypeID,
     ) -> Result<Commodity, ExchangeRateError> {
         match self.base {
-            // handle the situation where there is a base currency
+            // handle the situation where there is a base commodity type
             Some(base) => {
-                if commodity.currency_code == base {
-                    match self.get_rate(&target_currency) {
+                if commodity.type_id == base {
+                    match self.get_rate(&target_commodity_type) {
                         Some(rate) => {
-                            return Ok(Commodity::new(rate * commodity.value, target_currency))
+                            return Ok(Commodity::new(rate * commodity.value, target_commodity_type))
                         }
                         None => {}
                     };
                 }
 
-                if target_currency == base {
-                    match self.get_rate(&commodity.currency_code) {
+                if target_commodity_type == base {
+                    match self.get_rate(&commodity.type_id) {
                         Some(rate) => {
-                            return Ok(Commodity::new(commodity.value / rate, target_currency))
+                            return Ok(Commodity::new(commodity.value / rate, target_commodity_type))
                         }
                         None => {}
                     };
@@ -70,34 +73,34 @@ impl ExchangeRate {
             None => {}
         }
 
-        // handle the situation where there is no base currency, or neither the commodity
-        // currency or the target currency are the base currency.
+        // handle the situation where there is no base commodity type, or neither the commodity
+        // type or the target commodity type are the base commodity type.
 
-        let commodity_rate = match self.get_rate(&commodity.currency_code) {
+        let commodity_rate = match self.get_rate(&commodity.type_id) {
             Some(rate) => rate,
             None => {
-                return Err(ExchangeRateError::CurrencyNotPresent(
-                    commodity.currency_code,
+                return Err(ExchangeRateError::CommodityTypeNotPresent(
+                    commodity.type_id,
                 ))
             }
         };
 
-        let target_rate = match self.get_rate(&target_currency) {
+        let target_rate = match self.get_rate(&target_commodity_type) {
             Some(rate) => rate,
-            None => return Err(ExchangeRateError::CurrencyNotPresent(target_currency)),
+            None => return Err(ExchangeRateError::CommodityTypeNotPresent(target_commodity_type)),
         };
 
         let value = (commodity.value / commodity_rate) * target_rate;
-        return Ok(Commodity::new(value, target_currency));
+        return Ok(Commodity::new(value, target_commodity_type));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, CurrencyCode, ExchangeRate};
+    use super::{Commodity, CommodityTypeID, ExchangeRate};
     use chrono::NaiveDate;
     use rust_decimal::Decimal;
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
     use std::str::FromStr;
 
     #[cfg(feature = "serde-support")]
@@ -116,8 +119,8 @@ mod tests {
 "#;
 
         let exchange_rate: ExchangeRate = serde_json::from_str(original_data).unwrap();
-        let usd = CurrencyCode::from_str("USD").unwrap();
-        let eu = CurrencyCode::from_str("EU").unwrap();
+        let usd = CommodityTypeID::from_str("USD").unwrap();
+        let eu = CommodityTypeID::from_str("EU").unwrap();
 
         assert_eq!(
             NaiveDate::from_ymd(2020, 02, 07),
@@ -151,9 +154,9 @@ mod tests {
 
     #[test]
     fn convert_reference_rates() {
-        let mut rates: HashMap<CurrencyCode, Decimal> = HashMap::new();
-        let aud = CurrencyCode::from_str("AUD").unwrap();
-        let nzd = CurrencyCode::from_str("NZD").unwrap();
+        let mut rates: BTreeMap<CommodityTypeID, Decimal> = BTreeMap::new();
+        let aud = CommodityTypeID::from_str("AUD").unwrap();
+        let nzd = CommodityTypeID::from_str("NZD").unwrap();
         rates.insert(aud, Decimal::from_str("1.6417").unwrap());
         rates.insert(nzd, Decimal::from_str("1.7094").unwrap());
 
@@ -185,9 +188,9 @@ mod tests {
 
     #[test]
     fn convert_base_rate() {
-        let mut rates: HashMap<CurrencyCode, Decimal> = HashMap::new();
-        let nok = CurrencyCode::from_str("NOK").unwrap();
-        let usd = CurrencyCode::from_str("USD").unwrap();
+        let mut rates: BTreeMap<CommodityTypeID, Decimal> = BTreeMap::new();
+        let nok = CommodityTypeID::from_str("NOK").unwrap();
+        let usd = CommodityTypeID::from_str("USD").unwrap();
         rates.insert(nok, Decimal::from_str("9.2691220713").unwrap());
 
         let exchange_rate = ExchangeRate {
