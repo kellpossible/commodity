@@ -94,16 +94,17 @@ impl CommodityType {
     /// assert_eq!(CommodityTypeID::from_str("AUD").unwrap(), commodity_type.id);
     /// assert_eq!("Australian dollar", commodity_type.name.unwrap());
     /// ```
-    pub fn from_str(id: &str, name: &str) -> Result<CommodityType, CommodityError> {
-        let id = CommodityTypeID::from_str(id)?;
+    pub fn from_str<SR: AsRef<str>, SI: Into<String>>(id: SR, name: SI) -> Result<CommodityType, CommodityError> {
+        let id = CommodityTypeID::from_str(id.as_ref())?;
+        let name_string: String = name.into();
 
-        let name = if name.len() == 0 {
+        let name_option = if name_string.len() == 0 {
             None
         } else {
-            Some(String::from(name))
+            Some(name_string)
         };
 
-        Ok(CommodityType::new(id, name))
+        Ok(CommodityType::new(id, name_option))
     }
 
     /// Construct a [CommodityType](CommodityType) by looking it up in the `ISO4217`
@@ -117,10 +118,10 @@ impl CommodityType {
     /// assert_eq!("AUD", commodity_type.id);
     /// assert_eq!(Some(String::from("Australian dollar")), commodity_type.name);
     /// ```
-    pub fn from_currency_alpha3(alpha3: &str) -> Result<CommodityType, CommodityError> {
-        match iso4217::alpha3(alpha3) {
+    pub fn from_currency_alpha3<S: AsRef<str>>(alpha3: S) -> Result<CommodityType, CommodityError> {
+        match iso4217::alpha3(alpha3.as_ref()) {
             Some(id) => CommodityType::from_str(alpha3, id.name),
-            None => Err(CommodityError::InvalidISO4217Alpha3(String::from(alpha3))),
+            None => Err(CommodityError::InvalidISO4217Alpha3(String::from(alpha3.as_ref()))),
         }
     }
 }
