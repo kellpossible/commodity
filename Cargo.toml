@@ -1,6 +1,6 @@
 [package]
 name = "commodity"
-version = "0.3.1"
+version = "0.3.2"
 description = "A library for representing commodities/currencies, and exchange rates/conversions between them."
 keywords = ["financial", "fixed", "precision", "currency"]
 categories = ["science", "mathematics"]
