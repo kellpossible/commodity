@@ -135,6 +135,19 @@ impl PartialEq for CommodityType {
     }
 }
 
+impl fmt::Display for CommodityType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.name {
+            Some(name) => {
+                write!(f, "{} ({})", self.id, name)
+            },
+            None => {
+                write!(f, "{}", self.id)
+            }
+        }
+    }
+}
+
 /// Return a vector of all `ISO4217` currencies
 pub fn all_iso4217_currencies() -> Vec<CommodityType> {
     let mut currencies = Vec::new();
@@ -779,6 +792,7 @@ mod tests {
         assert_eq!(original_data, serialized_data);
     }
 
+    /// Test the `PartialEq` implementation for `CommodityType`.
     #[test]
     fn test_commodity_type_partial_eq() {
         let aud = CommodityType::from_currency_alpha3("AUD").unwrap();
@@ -787,5 +801,15 @@ mod tests {
 
         let usd = CommodityType::from_currency_alpha3("USD").unwrap();
         assert!(aud != usd);
+    }
+
+    /// Test the `Display` implementation for `CommodityType`.
+    #[test]
+    fn test_commodity_type_display() {
+        let aud = CommodityType::from_currency_alpha3("AUD").unwrap();
+        assert_eq!("AUD (Australian dollar)", &format!("{}", aud));
+
+        let test = CommodityType::new(CommodityTypeID::from_str("TEST").unwrap(), None);
+        assert_eq!("TEST", &format!("{}", test))
     }
 }

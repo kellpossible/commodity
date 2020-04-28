@@ -1,5 +1,9 @@
 # Changelog for Commodity
 
+## v0.3.4
+
++ Implement `Display` for `CommodityType`.
+
 ## v0.3.3
 
 + Implement `PartialEq` for `CommodityType`.
