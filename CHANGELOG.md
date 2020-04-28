@@ -1,5 +1,9 @@
 # Changelog for Commodity
 
+## v0.3.3
+
++ Implement `PartialEq` for `CommodityType`.
+
 ## v0.3.2
 
 + Fix this changelog!

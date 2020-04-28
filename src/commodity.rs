@@ -126,6 +126,15 @@ impl CommodityType {
     }
 }
 
+/// This implementation only checks that the ids match. It assumes
+/// that you will not have logical different commodity types with the
+/// same id but different names.
+impl PartialEq for CommodityType {
+    fn eq(&self, other: &Self) -> bool { 
+        self.id == other.id
+    }
+}
+
 /// Return a vector of all `ISO4217` currencies
 pub fn all_iso4217_currencies() -> Vec<CommodityType> {
     let mut currencies = Vec::new();
@@ -671,7 +680,7 @@ impl fmt::Display for Commodity {
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, CommodityError, CommodityTypeID};
+    use super::{Commodity, CommodityType, CommodityError, CommodityTypeID};
     use rust_decimal::Decimal;
     use std::str::FromStr;
 
@@ -768,5 +777,15 @@ mod tests {
 
         let serialized_data = serde_json::to_string(&type_id).unwrap();
         assert_eq!(original_data, serialized_data);
+    }
+
+    #[test]
+    fn test_commodity_type_partial_eq() {
+        let aud = CommodityType::from_currency_alpha3("AUD").unwrap();
+        let aud2 = CommodityType::from_str("AUD", "Australian Dollar 2").unwrap();
+        assert!(aud == aud2);
+
+        let usd = CommodityType::from_currency_alpha3("USD").unwrap();
+        assert!(aud != usd);
     }
 }
