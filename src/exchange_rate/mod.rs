@@ -21,7 +21,7 @@ pub enum ExchangeRateError {
 /// Represents the exchange rate between [Commodity](Commodity)s
 /// with different [CommodityType](crate::CommodityType)s.
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExchangeRate {
     /// The datetime that this exchange rate represents
     pub date: Option<NaiveDate>,
