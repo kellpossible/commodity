@@ -766,7 +766,7 @@ mod tests {
 
     #[cfg(feature = "serde-support")]
     #[test]
-    fn test_type_id_json_serialization() {
+    fn test_type_id_serialization() {
         use serde_json;
 
         let original_data = "\"AUD\"";
@@ -780,15 +780,18 @@ mod tests {
 
     #[cfg(feature = "serde-support")]
     #[test]
-    fn test_commodity_json_serialization() {
+    fn test_commodity_serialization() {
         use serde_json;
 
-        let original_data = "\"AUD\"";
-        let type_id: CommodityTypeID = serde_json::from_str(original_data).unwrap();
+        let original_data = r#"{
+  "value": "1.0",
+  "type_id": "AUD"
+}"#;
+        let type_id: Commodity = serde_json::from_str(original_data).unwrap();
 
-        assert_eq!(CommodityTypeID::from_str("AUD").unwrap(), type_id);
+        assert_eq!(Commodity::from_str("1.0 AUD").unwrap(), type_id);
 
-        let serialized_data = serde_json::to_string(&type_id).unwrap();
+        let serialized_data = serde_json::to_string_pretty(&type_id).unwrap();
         assert_eq!(original_data, serialized_data);
     }
 
