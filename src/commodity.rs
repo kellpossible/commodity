@@ -98,7 +98,7 @@ impl CommodityType {
         let id = CommodityTypeID::from_str(id.as_ref())?;
         let name_string: String = name.into();
 
-        let name_option = if name_string.len() == 0 {
+        let name_option = if name_string.is_empty() {
             None
         } else {
             Some(name_string)
@@ -157,7 +157,7 @@ pub fn all_iso4217_currencies() -> Vec<CommodityType> {
         );
     }
 
-    return currencies;
+    currencies
 }
 
 /// The id of a [CommodityType](CommodityType) stored in a fixed
@@ -198,9 +198,9 @@ impl FromStr for CommodityTypeID {
             return Err(CommodityError::TooLongCommodityTypeID(String::from(id)));
         }
 
-        return Ok(CommodityTypeID::new(
+        Ok(CommodityTypeID::new(
             CommodityTypeIDArray::from(id).unwrap(),
-        ));
+        ))
     }
 }
 
@@ -294,13 +294,13 @@ fn check_commodity_type_compatible(
 ) -> Result<(), CommodityError> {
     if !this_commodity.compatible_with(other_commodity) {
         return Err(CommodityError::IncompatableCommodity {
-            this_commodity: this_commodity.clone(),
-            other_commodity: other_commodity.clone(),
+            this_commodity: *this_commodity,
+            other_commodity: *other_commodity,
             reason,
         });
     }
 
-    return Ok(());
+    Ok(())
 }
 
 impl Commodity {
@@ -367,7 +367,7 @@ impl Commodity {
             String::from("cannot add commodities with different currencies"),
         )?;
 
-        return Ok(Commodity::new(self.value + other.value, self.type_id));
+        Ok(Commodity::new(self.value + other.value, self.type_id))
     }
 
     /// Subtract the value of commodity `other` from `self`
@@ -396,7 +396,7 @@ impl Commodity {
             String::from("cannot subtract commodities with different currencies"),
         )?;
 
-        return Ok(Commodity::new(self.value - other.value, self.type_id));
+        Ok(Commodity::new(self.value - other.value, self.type_id))
     }
 
     /// Negate the value of this commodity such that `result = -self`
@@ -499,9 +499,7 @@ impl Commodity {
             commodities.push(Commodity::new(value, self.type_id))
         }
 
-        dbg!(commodities.clone());
-
-        return commodities;
+        commodities
     }
 
     /// Convert this commodity to a different commodity_type using a conversion rate.
@@ -538,7 +536,7 @@ impl Commodity {
     /// assert!(!aud1.compatible_with(&nzd));
     /// ```
     pub fn compatible_with(&self, other: &Commodity) -> bool {
-        return self.type_id == other.type_id;
+        self.type_id == other.type_id
     }
 
     /// Compare whether this commodity has a value less than another commodity.
@@ -606,7 +604,7 @@ impl Commodity {
     /// assert_eq!(Commodity::from_str("2.0 AUD").unwrap(), aud2.abs());
     /// ```
     pub fn abs(&self) -> Commodity {
-        return Commodity::new(self.value.abs(), self.type_id);
+        Commodity::new(self.value.abs(), self.type_id)
     }
 
     /// The default epsilon to use for comparisons between different [Commodity](Commodity)s.
@@ -624,7 +622,7 @@ impl Commodity {
             other.value - self.value
         };
 
-        return diff <= epsilon;
+        diff <= epsilon
     }
 }
 

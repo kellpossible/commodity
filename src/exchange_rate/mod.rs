@@ -49,34 +49,24 @@ impl ExchangeRate {
         commodity: Commodity,
         target_commodity_type: CommodityTypeID,
     ) -> Result<Commodity, ExchangeRateError> {
-        match self.base {
-            // handle the situation where there is a base commodity type
-            Some(base) => {
-                if commodity.type_id == base {
-                    match self.get_rate(&target_commodity_type) {
-                        Some(rate) => {
-                            return Ok(Commodity::new(
-                                rate * commodity.value,
-                                target_commodity_type,
-                            ))
-                        }
-                        None => {}
-                    };
-                }
-
-                if target_commodity_type == base {
-                    match self.get_rate(&commodity.type_id) {
-                        Some(rate) => {
-                            return Ok(Commodity::new(
-                                commodity.value / rate,
-                                target_commodity_type,
-                            ))
-                        }
-                        None => {}
-                    };
-                }
+        if let Some(base) = self.base {
+            if commodity.type_id == base {
+                if let Some(rate) = self.get_rate(&target_commodity_type) {
+                    return Ok(Commodity::new(
+                        rate * commodity.value,
+                        target_commodity_type,
+                    ))
+                };
             }
-            None => {}
+
+            if target_commodity_type == base {
+                if let Some(rate) = self.get_rate(&commodity.type_id) {
+                    return Ok(Commodity::new(
+                        commodity.value / rate,
+                        target_commodity_type,
+                    ))
+                };
+            }
         }
 
         // handle the situation where there is no base commodity type, or neither the commodity
@@ -101,7 +91,8 @@ impl ExchangeRate {
         };
 
         let value = (commodity.value / commodity_rate) * target_rate;
-        return Ok(Commodity::new(value, target_commodity_type));
+        
+        Ok(Commodity::new(value, target_commodity_type))
     }
 }
 
@@ -155,8 +146,6 @@ mod tests {
     "USD": "2.542"
   }
 }"#;
-
-        dbg!(&exchange_rate);
 
         let serialized_data = serde_json::to_string_pretty(&exchange_rate).unwrap();
         assert_eq!(expected_serialized_data, serialized_data);
