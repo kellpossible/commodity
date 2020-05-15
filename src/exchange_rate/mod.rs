@@ -55,7 +55,7 @@ impl ExchangeRate {
                     return Ok(Commodity::new(
                         rate * commodity.value,
                         target_commodity_type,
-                    ))
+                    ));
                 };
             }
 
@@ -64,7 +64,7 @@ impl ExchangeRate {
                     return Ok(Commodity::new(
                         commodity.value / rate,
                         target_commodity_type,
-                    ))
+                    ));
                 };
             }
         }
@@ -91,7 +91,7 @@ impl ExchangeRate {
         };
 
         let value = (commodity.value / commodity_rate) * target_rate;
-        
+
         Ok(Commodity::new(value, target_commodity_type))
     }
 }

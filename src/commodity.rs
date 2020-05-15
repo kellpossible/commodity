@@ -94,7 +94,10 @@ impl CommodityType {
     /// assert_eq!(CommodityTypeID::from_str("AUD").unwrap(), commodity_type.id);
     /// assert_eq!("Australian dollar", commodity_type.name.unwrap());
     /// ```
-    pub fn from_str<SR: AsRef<str>, SI: Into<String>>(id: SR, name: SI) -> Result<CommodityType, CommodityError> {
+    pub fn from_str<SR: AsRef<str>, SI: Into<String>>(
+        id: SR,
+        name: SI,
+    ) -> Result<CommodityType, CommodityError> {
         let id = CommodityTypeID::from_str(id.as_ref())?;
         let name_string: String = name.into();
 
@@ -121,7 +124,9 @@ impl CommodityType {
     pub fn from_currency_alpha3<S: AsRef<str>>(alpha3: S) -> Result<CommodityType, CommodityError> {
         match iso4217::alpha3(alpha3.as_ref()) {
             Some(id) => CommodityType::from_str(alpha3, id.name),
-            None => Err(CommodityError::InvalidISO4217Alpha3(String::from(alpha3.as_ref()))),
+            None => Err(CommodityError::InvalidISO4217Alpha3(String::from(
+                alpha3.as_ref(),
+            ))),
         }
     }
 }
@@ -130,7 +135,7 @@ impl CommodityType {
 /// that you will not have logical different commodity types with the
 /// same id but different names.
 impl PartialEq for CommodityType {
-    fn eq(&self, other: &Self) -> bool { 
+    fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
@@ -138,12 +143,8 @@ impl PartialEq for CommodityType {
 impl fmt::Display for CommodityType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.name {
-            Some(name) => {
-                write!(f, "{} ({})", self.id, name)
-            },
-            None => {
-                write!(f, "{}", self.id)
-            }
+            Some(name) => write!(f, "{} ({})", self.id, name),
+            None => write!(f, "{}", self.id),
         }
     }
 }
@@ -691,7 +692,7 @@ impl fmt::Display for Commodity {
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, CommodityType, CommodityError, CommodityTypeID};
+    use super::{Commodity, CommodityError, CommodityType, CommodityTypeID};
     use rust_decimal::Decimal;
     use std::str::FromStr;
 
