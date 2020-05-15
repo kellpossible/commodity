@@ -1,4 +1,4 @@
-# Commodity [![crates.io badge](https://img.shields.io/crates/v/commodity.svg)](https://crates.io/crates/commodity) [![license badge](https://img.shields.io/github/license/kellpossible/commodity)](https://github.com/kellpossible/commodity/blob/master/LICENSE.txt) [![docs.rs badge](https://docs.rs/commodity/badge.svg)](https://docs.rs/commodity/)
+# Commodity [![crates.io badge](https://img.shields.io/crates/v/commodity.svg)](https://crates.io/crates/commodity) [![docs.rs badge](https://docs.rs/commodity/badge.svg)](https://docs.rs/commodity/) [![license badge](https://img.shields.io/github/license/kellpossible/commodity)](https://github.com/kellpossible/commodity/blob/master/LICENSE.txt) [![github action badge](https://github.com/kellpossible/commodity/workflows/Rust/badge.svg)](https://github.com/kellpossible/commodity/actions?query=workflow%3ARust)
 
 A library for representing commodities/currencies, and exchange rates/conversions between them in Rust. Values are backed by the [rust_decimal](https://crates.io/crates/rust_decimal) library.
 
