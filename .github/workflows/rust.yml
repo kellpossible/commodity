@@ -19,7 +19,7 @@ jobs:
       run: cargo test --all-features --verbose
   
   check:
-    name: Rust project
+    name: codecov
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -39,6 +39,8 @@ jobs:
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v1
