@@ -1,5 +1,9 @@
 # Changelog for Commodity
 
+## v0.3.6
+
++ Implement `Eq` for `CommodityType`.
+
 ## v0.3.5
 
 + Implement `PartialEq` for `ExchangeRate`.
