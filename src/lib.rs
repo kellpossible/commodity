@@ -59,6 +59,7 @@
 
 extern crate arrayvec;
 extern crate chrono;
+#[cfg(feature = "iso4217")]
 extern crate iso4217;
 extern crate rust_decimal;
 

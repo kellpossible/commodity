@@ -1,6 +1,6 @@
 [package]
 name = "commodity"
-version = "0.3.7"
+version = "0.4.0"
 description = "A library for representing commodities/currencies, and exchange rates/conversions between them."
 keywords = ["financial", "fixed", "precision", "currency"]
 categories = ["science", "mathematics"]
@@ -22,7 +22,7 @@ serde-support = ["serde", "serde_derive", "chrono/serde", "arrayvec/serde", "rus
 [dependencies]
 chrono = "0.4"
 thiserror = "1.0"
-iso4217 = "0.3"
+iso4217 = { version = "0.3", optional = true }
 serde = { version = "1.0", optional = true, features = ["derive"] }
 arrayvec = "0.5"
 serde_derive = { version = "1.0", optional = true}

@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 #[cfg(feature = "serde-support")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
-use std::str::FromStr;
+use std::{hash::Hash, str::FromStr};
 use thiserror::Error;
 
 /// The length of the [CommodityTypeIDArray](CommodityTypeIDArray) type,
@@ -32,7 +32,9 @@ pub enum CommodityError {
         COMMODITY_TYPE_ID_LENGTH
     )]
     TooLongCommodityTypeID(String),
+    #[cfg(feature = "iso4217")]
     #[error("The provided alpha3 code {0} doesn't match any in the iso4217 database")]
+    #[cfg(feature = "iso4217")]
     InvalidISO4217Alpha3(String),
     #[error("The provided string {0} is invalid, it should be a decimal followed by a commodity_type. e.g. 1.234 USD")]
     InvalidCommodityString(String),
@@ -44,7 +46,7 @@ pub enum CommodityError {
 /// genarally stored and used to refer to a given
 /// [CommodityType](CommodityType).
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Eq, Hash)]
+#[derive(Debug, Clone, Eq)]
 pub struct CommodityType {
     /// Stores the id of this commodity type in a fixed length
     /// [ArrayString](ArrayString), with a maximum length of
@@ -121,6 +123,7 @@ impl CommodityType {
     /// assert_eq!("AUD", commodity_type.id);
     /// assert_eq!(Some(String::from("Australian dollar")), commodity_type.name);
     /// ```
+    #[cfg(feature = "iso4217")]
     pub fn from_currency_alpha3<S: AsRef<str>>(alpha3: S) -> Result<CommodityType, CommodityError> {
         match iso4217::alpha3(alpha3.as_ref()) {
             Some(id) => CommodityType::from_str(alpha3, id.name),
@@ -140,6 +143,12 @@ impl PartialEq for CommodityType {
     }
 }
 
+impl Hash for CommodityType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state)
+    }
+}
+
 impl fmt::Display for CommodityType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.name {
@@ -150,6 +159,7 @@ impl fmt::Display for CommodityType {
 }
 
 /// Return a vector of all `ISO4217` currencies
+#[cfg(feature = "iso4217")]
 pub fn all_iso4217_currencies() -> Vec<CommodityType> {
     let mut currencies = Vec::new();
     for iso_commodity_type in iso4217::all() {
@@ -797,18 +807,18 @@ mod tests {
     /// Test the `PartialEq` implementation for `CommodityType`.
     #[test]
     fn test_commodity_type_partial_eq() {
-        let aud = CommodityType::from_currency_alpha3("AUD").unwrap();
+        let aud = CommodityType::from_str("AUD", "Australian Dollar").unwrap();
         let aud2 = CommodityType::from_str("AUD", "Australian Dollar 2").unwrap();
         assert!(aud == aud2);
 
-        let usd = CommodityType::from_currency_alpha3("USD").unwrap();
+        let usd = CommodityType::from_str("USD", "United States Dollar").unwrap();
         assert!(aud != usd);
     }
 
     /// Test the `Display` implementation for `CommodityType`.
     #[test]
     fn test_commodity_type_display() {
-        let aud = CommodityType::from_currency_alpha3("AUD").unwrap();
+        let aud = CommodityType::from_str("AUD", "Australian dollar").unwrap();
         assert_eq!("AUD (Australian dollar)", &format!("{}", aud));
 
         let test = CommodityType::new(CommodityTypeID::from_str("TEST").unwrap(), None);

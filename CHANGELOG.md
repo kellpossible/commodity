@@ -1,5 +1,15 @@
 # Changelog for Commodity
 
+## v0.4.0
+
+New Features:
+
++ Add `rate_between()` method to `ExchangeRate`.
+
+Breaking:
+
++ Make `iso4217` an optional dependency (disabled by default).
+
 ## v0.3.7
 
 + Implement `Hash` for `CommodityType`.
