@@ -44,7 +44,7 @@ pub enum CommodityError {
 /// genarally stored and used to refer to a given
 /// [CommodityType](CommodityType).
 #[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Eq, Hash)]
 pub struct CommodityType {
     /// Stores the id of this commodity type in a fixed length
     /// [ArrayString](ArrayString), with a maximum length of

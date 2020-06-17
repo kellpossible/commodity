@@ -1,5 +1,9 @@
 # Changelog for Commodity
 
+## v0.3.7
+
++ Implement `Hash` for `CommodityType`.
+
 ## v0.3.6
 
 + Implement `Eq` for `CommodityType`.
